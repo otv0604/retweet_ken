@@ -4,6 +4,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.action_chains import ActionChains
 import time
 import secret
 
@@ -12,7 +13,7 @@ username = secret.credentials["LOGIN_ID"]
 password = secret.credentials["PASSWORD"]
 
 # Chromeを起動する
-service = Service("./chromedriver.exe")
+service = Service("./chromedriver113.exe")
 service.start()
 options = webdriver.ChromeOptions()
 # options.add_argument("--headless")
@@ -21,16 +22,13 @@ wait = WebDriverWait(driver, 5)
 # driver.maximize_window()
 
 # Twitterにログインする
-driver.get("https://twitter.com/login")
-# time.sleep(5)
-wait.until(EC.presence_of_all_elements_located((By.NAME, "text")))
-driver.find_element(By.NAME, "text").send_keys(username)
-driver.find_element(By.NAME, "text").send_keys(Keys.ENTER)
-# time.sleep(2)
-wait.until(EC.presence_of_all_elements_located((By.NAME, "password")))
-driver.find_element(By.NAME, "password").send_keys(password)
-driver.find_element(By.NAME, "password").send_keys(Keys.ENTER)
-time.sleep(2)
+# driver.get("https://twitter.com/login")
+# wait.until(EC.presence_of_all_elements_located((By.NAME, "text")))
+# driver.find_element(By.NAME, "text").send_keys(username)
+# driver.find_element(By.NAME, "text").send_keys(Keys.ENTER)
+# wait.until(EC.presence_of_all_elements_located((By.NAME, "password")))
+# driver.find_element(By.NAME, "password").send_keys(password)
+# driver.find_element(By.NAME, "password").send_keys(Keys.ENTER)
 
 # リツイートするユーザーのページに移動する
 driver.get("https://twitter.com/potitto_tousen")
@@ -72,23 +70,33 @@ for k in range(10):
     for rt in tweet[:10]:
         try:
             # リツイート元のツイートをしたユーザーをフォローする
-            follow_link = rt.find_element(
-                By.XPATH, './/div[@data-testid="User-Name"]//a[@role="link"]'
+            hover = rt.find_element(By.XPATH, "//div[@data-testid='User-Name']")
+            print(hover)
+            actions = ActionChains(driver)
+            actions.move_to_element(hover).perform()
+
+            main_lang = rt.find_element(
+                By.XPATH, "//div[matches(@data-testid," r".*-follow" ")]"
             )
-            follow_username = follow_link.get_attribute("href").split("/")[-1]
-            driver.execute_script("arguments[0].click();", follow_link)
-            follow_link.click()
-            time.sleep(2)
-            follow_button = driver.find_element(
-                By.XPATH,
-                '//div[@data-testid="primaryColumn"]//div[@data-testid="placementTracking"]//div[@data-testid="FollowButton"]//div[@role="button"]',
-            )
-            follow_button_text = follow_button.text.strip()
-            if "フォロー中" in follow_button_text:
-                print("フォロー済みです。")
-            else:
-                follow_button.click()
-                print("フォローしました。")
+            main_lang.click()
+
+            # follow_link = rt.find_element(
+            #     By.XPATH, './/div[@data-testid="User-Name"]//a[@role="link"]'
+            # )
+            # follow_username = follow_link.get_attribute("href").split("/")[-1]
+            # driver.execute_script("arguments[0].click();", follow_link)
+            # follow_link.click()
+            # time.sleep(2)
+            # follow_button = driver.find_element(
+            #     By.XPATH,
+            #     '//div[@data-testid="primaryColumn"]//div[@data-testid="placementTracking"]//div[@data-testid="FollowButton"]//div[@role="button"]',
+            # )
+            # follow_button_text = follow_button.text.strip()
+            # if "フォロー中" in follow_button_text:
+            #     print("フォロー済みです。")
+            # else:
+            #     follow_button.click()
+            #     print("フォローしました。")
 
             # ツイートをリツイートする
             retweet_button = rt.find_element(By.XPATH, './/div[@data-testid="retweet"]')
@@ -112,21 +120,4 @@ for k in range(10):
     time.sleep(2)
 
 # WebDriverを終了する
-driver.quit()
-
-
-#     driver.get(f"https://twitter.com/{retweet_user_name}")
-#     time.sleep(2)
-#     follow_button = driver.find_element(
-#         By.XPATH,
-#         '//div[@data-testid="primaryColumn"]//div[@data-testid="placementTracking"]//div[contains(@data-testid,"follow")]',
-#     )
-#     follow_button_text = follow_button.text.strip()
-#     if "フォロー中" in follow_button_text:
-#         print("すでにフォロー済みです。")
-#     else:
-#         follow_button.click()
-#         print("フォローしました。")
-#         time.sleep(2)
-# except:
-#     continue
+# driver.quit()
