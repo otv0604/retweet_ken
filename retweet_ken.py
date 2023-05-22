@@ -1,123 +1,88 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium import webdriver
+from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 import time
-import secret
 
-# ユーザー名とパスワード
-username = secret.credentials["LOGIN_ID"]
-password = secret.credentials["PASSWORD"]
-
-# Chromeを起動する
+# Chromeドライバーのパスを指定してWebDriverを初期化
 service = Service("./chromedriver113.exe")
 service.start()
 options = webdriver.ChromeOptions()
 # options.add_argument("--headless")
 driver = webdriver.Chrome(service=service, options=options)
-wait = WebDriverWait(driver, 5)
-# driver.maximize_window()
 
-# Twitterにログインする
-# driver.get("https://twitter.com/login")
-# wait.until(EC.presence_of_all_elements_located((By.NAME, "text")))
-# driver.find_element(By.NAME, "text").send_keys(username)
-# driver.find_element(By.NAME, "text").send_keys(Keys.ENTER)
-# wait.until(EC.presence_of_all_elements_located((By.NAME, "password")))
-# driver.find_element(By.NAME, "password").send_keys(password)
-# driver.find_element(By.NAME, "password").send_keys(Keys.ENTER)
+# Twitterのページを開く
+driver.get("https://twitter.com/potitto_tousen/")
+time.sleep(10)
+actions = ActionChains(driver)
 
-# リツイートするユーザーのページに移動する
-driver.get("https://twitter.com/potitto_tousen")
+# 通知popup消去
+driver.find_element(
+    By.XPATH,
+    '//*[@id="layers"]/div[2]/div/div/div/div/div/div[2]/div[2]/div/div[2]/div/div[2]/div[2]/div[2]',
+).click()
 
-# 最新のツイートから取得する
-# wait.until(
-#     EC.presence_of_all_elements_located(
-#         (By.XPATH, "//div[@data-testid='cellInnerDiv']")
-#     )
-# )
-# tweet = driver.find_elements(By.XPATH, "//div[@data-testid='cellInnerDiv']")
+# ツイート読み込みまで待機
+wait = WebDriverWait(driver, 30)
+wait.until(
+    EC.visibility_of_element_located((By.XPATH, "//div[@data-testid='cellInnerDiv']"))
+)
+tweet_elements = driver.find_elements(By.XPATH, "//div[@data-testid='cellInnerDiv']")
+for rt in tweet_elements:
+    try:
+        print("==============================")
+        print(rt.text)
+        print("==============================")
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
+        continue
 
-# tweetsにappend
-# tweets = []
-# try:
-#     for x in tweet:
-#         tweets.append(x)
-# except:
-#     pass
+for k in range(3):
+    # 1000pxスクロールする
+    driver.execute_script("window.scrollBy(0, 3000);")
+    print("スクロールスクロールスクロールスクロール")
+    print("スクロールスクロールスクロールスクロール")
+    print("スクロールスクロールスクロールスクロール")
+    # 1秒待機して過去ツイートが読み込まれるのを待つ
+    time.sleep(1)
 
-# scrollしながらRT
-y = 0
-for k in range(10):
-    # 初期画面から取得
+    # 過去ツイートの要素を特定し、数を取得
+    wait = WebDriverWait(driver, 30)
     wait.until(
-        EC.presence_of_all_elements_located(
+        EC.visibility_of_element_located(
             (By.XPATH, "//div[@data-testid='cellInnerDiv']")
         )
     )
-    tweet = driver.find_elements(By.XPATH, "//div[@data-testid='cellInnerDiv']")
-
-    # try:
-    #     for x in tweet:
-    #         tweets.append(x)
-    # except:
-    #     continue
-
-    # RT
-    for rt in tweet[:10]:
+    tweet_elements = driver.find_elements(
+        By.XPATH, "//div[@data-testid='cellInnerDiv']"
+    )
+    for rt in tweet_elements:
         try:
-            # リツイート元のツイートをしたユーザーをフォローする
-            hover = rt.find_element(By.XPATH, "//div[@data-testid='User-Name']")
-            print(hover)
-            actions = ActionChains(driver)
-            actions.move_to_element(hover).perform()
-
-            main_lang = rt.find_element(
-                By.XPATH, "//div[matches(@data-testid," r".*-follow" ")]"
-            )
-            main_lang.click()
-
-            # follow_link = rt.find_element(
-            #     By.XPATH, './/div[@data-testid="User-Name"]//a[@role="link"]'
-            # )
-            # follow_username = follow_link.get_attribute("href").split("/")[-1]
-            # driver.execute_script("arguments[0].click();", follow_link)
-            # follow_link.click()
-            # time.sleep(2)
-            # follow_button = driver.find_element(
-            #     By.XPATH,
-            #     '//div[@data-testid="primaryColumn"]//div[@data-testid="placementTracking"]//div[@data-testid="FollowButton"]//div[@role="button"]',
-            # )
-            # follow_button_text = follow_button.text.strip()
-            # if "フォロー中" in follow_button_text:
-            #     print("フォロー済みです。")
-            # else:
-            #     follow_button.click()
-            #     print("フォローしました。")
-
-            # ツイートをリツイートする
-            retweet_button = rt.find_element(By.XPATH, './/div[@data-testid="retweet"]')
-            driver.execute_script("arguments[0].click();", retweet_button)
-            time.sleep(2)
-
-            confirm_button = driver.find_element(
-                By.XPATH, '//div[@data-testid="retweetConfirm"]'
-            )
-            confirm_button_text = confirm_button.text.strip()
-            driver.execute_script("arguments[0].click();", confirm_button)
-            print("リツイートしました。")
-            time.sleep(2)
-
+            print("==============================")
+            print(rt.text)
+            print("==============================")
+            with open("tweets.txt", "a", encoding="utf-8") as file:
+                text = rt.text.strip()
+                if text:
+                    file.write("==============================\n")
+                    file.write(text + "\n")
+                    file.write("==============================\n")
         except Exception as e:
             print(f"An error occurred: {str(e)}")
             continue
 
-    y += 1000
-    driver.execute_script(f"window.scrollTo(0,{y})")
-    time.sleep(2)
+    past_tweet_count = len(tweet_elements)
 
-# WebDriverを終了する
-# driver.quit()
+    # 結果を表示
+    print("1000pxスクロール後の過去ツイート数:", past_tweet_count)
+
+    # 追加するコード
+
+
+# WebDriverを終了
+driver.quit()
