@@ -1,88 +1,62 @@
 from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.action_chains import ActionChains
 import time
 
 # Chromeドライバーのパスを指定してWebDriverを初期化
-service = Service("./chromedriver113.exe")
-service.start()
-options = webdriver.ChromeOptions()
-# options.add_argument("--headless")
+service = Service("chromedriver.exe")
+options = Options()
+# options.headless = True # ヘッドレスモードを有効化する場合はコメント解除
 driver = webdriver.Chrome(service=service, options=options)
+wait = WebDriverWait(driver, 10)
 
-# Twitterのページを開く
-driver.get("https://twitter.com/potitto_tousen/")
-time.sleep(10)
-actions = ActionChains(driver)
+try:
+    # Twitterのページを開く
+    driver.get("https://twitter.com/potitto_tousen/")
+    # 通知popup消去
+    time.sleep(10)
+    driver.find_element(
+        By.XPATH,
+        '//*[@id="layers"]/div[2]/div/div/div/div/div/div[2]/div[2]/div/div[2]/div/div[2]/div[2]/div[2]',
+    ).click()
 
-# 通知popup消去
-driver.find_element(
-    By.XPATH,
-    '//*[@id="layers"]/div[2]/div/div/div/div/div/div[2]/div[2]/div/div[2]/div/div[2]/div[2]/div[2]',
-).click()
+    # 最初のツイート要素を取得
+    previous_tweets = driver.find_elements(By.CSS_SELECTOR, "div[data-testid='tweet']")
 
-# ツイート読み込みまで待機
-wait = WebDriverWait(driver, 30)
-wait.until(
-    EC.visibility_of_element_located((By.XPATH, "//div[@data-testid='cellInnerDiv']"))
-)
-tweet_elements = driver.find_elements(By.XPATH, "//div[@data-testid='cellInnerDiv']")
-for rt in tweet_elements:
-    try:
-        print("==============================")
-        print(rt.text)
-        print("==============================")
-    except Exception as e:
-        print(f"An error occurred: {str(e)}")
-        continue
+    for _ in range(3):
+        # 1000pxスクロールする
+        driver.execute_script("window.scrollBy(0, 1000);")
+        print("スクロールスクロールスクロールスクロール出ていけ")  # スクロール部分のコメントに「出ていけ」を追加
+        print("スクロールスクロールスクロールスクロール出ていけ")
+        print("スクロールスクロールスクロールスクロール出ていけ")
 
-for k in range(3):
-    # 1000pxスクロールする
-    driver.execute_script("window.scrollBy(0, 3000);")
-    print("スクロールスクロールスクロールスクロール")
-    print("スクロールスクロールスクロールスクロール")
-    print("スクロールスクロールスクロールスクロール")
-    # 1秒待機して過去ツイートが読み込まれるのを待つ
-    time.sleep(1)
+        # ページのロード完了を待機
+        wait.until(EC.visibility_of_element_located((By.TAG_NAME, "article")))
 
-    # 過去ツイートの要素を特定し、数を取得
-    wait = WebDriverWait(driver, 30)
-    wait.until(
-        EC.visibility_of_element_located(
-            (By.XPATH, "//div[@data-testid='cellInnerDiv']")
-        )
-    )
-    tweet_elements = driver.find_elements(
-        By.XPATH, "//div[@data-testid='cellInnerDiv']"
-    )
-    for rt in tweet_elements:
-        try:
-            print("==============================")
-            print(rt.text)
-            print("==============================")
-            with open("tweets.txt", "a", encoding="utf-8") as file:
-                text = rt.text.strip()
+        # 新しく表示されたツイート要素のみを取得
+        current_tweets = driver.find_elements(By.TAG_NAME, "article")
+        new_tweets = [tweet for tweet in current_tweets if tweet not in previous_tweets]
+
+        for tweet in new_tweets:
+            try:
+                print("==============================")
+                print(tweet.text + "出ていけ")  # コメントの語尾に「出ていけ」を追加
+                print("==============================")
+                with open("tweets.txt", "a", encoding="utf-8") as file:
+                    text = tweet.text.strip()
                 if text:
-                    file.write("==============================\n")
+                    file.write("出ていけ\n")
                     file.write(text + "\n")
-                    file.write("==============================\n")
-        except Exception as e:
-            print(f"An error occurred: {str(e)}")
+                    file.write("出ていけ\n")
+            except Exception as e:
+                print(f"An error occurred: {str(e)}")
             continue
 
-    past_tweet_count = len(tweet_elements)
+    # 新しく表示されたツイートを前回のツイートとして更新
+    previous_tweets = current_tweets
 
-    # 結果を表示
-    print("1000pxスクロール後の過去ツイート数:", past_tweet_count)
-
-    # 追加するコード
-
-
-# WebDriverを終了
-driver.quit()
+finally:
+    driver.quit()
