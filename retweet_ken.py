@@ -35,12 +35,22 @@ try:
                 print("==============================")
                 print(tweet.text + "出ていけ")
                 print("==============================")
+
+                follow_link = tweet.find_element(
+                    By.XPATH, './/div[@data-testid="User-Name"]//a[@role="link"]'
+                )
+
                 with open("tweets.txt", "a", encoding="utf-8") as file:
                     text = tweet.text.strip()
+                    textf = follow_link.text.strip()
                     if text:
-                        file.write("*****************************\n")
+                        file.write("**************************\n")
                         file.write(text + "\n")
-                        file.write("*****************************\n")
+                        file.write("**************************\n")
+
+                        file.write("--------------------------\n")
+                        file.write(textf + "\n")
+                        file.write("--------------------------\n")
             except Exception as e:
                 print(f"An error occurred: {str(e)}")
                 continue
