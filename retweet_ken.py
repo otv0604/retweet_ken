@@ -6,6 +6,8 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
 
+print("test_でていけ")
+
 # Chromeドライバーのパスを指定してWebDriverを初期化
 service = Service("chromedriver.exe")
 options = Options()
