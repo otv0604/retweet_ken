@@ -4,9 +4,8 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import time
-
-print("test_でていけ")
+from selenium.webdriver.common.action_chains import ActionChains
+import getpass
 
 # Chromeドライバーのパスを指定してWebDriverを初期化
 service = Service("chromedriver.exe")
@@ -15,55 +14,39 @@ options = Options()
 driver = webdriver.Chrome(service=service, options=options)
 wait = WebDriverWait(driver, 10)
 
-try:
-    # Twitterのページを開く
-    driver.get("https://twitter.com/potitto_tousen/")
-    # 通知popup消去
-    time.sleep(10)
-    driver.find_element(
-        By.XPATH,
-        '//*[@id="layers"]/div[2]/div/div/div/div/div/div[2]/div[2]/div/div[2]/div/div[2]/div[2]/div[2]',
-    ).click()
+# ユーザー名とパスワードの入力
+username = input("ログインIDを入力してください: ")
+password = getpass.getpass("パスワードを入力してください: ")
 
-    for _ in range(3):
-        # ページのロード完了を待機
-        wait.until(EC.visibility_of_element_located((By.TAG_NAME, "article")))
+# Twitterにログイン
+driver.get("https://twitter.com/login")
+wait.until(EC.presence_of_element_located((By.NAME, "session[username_or_email]")))
+username_field = driver.find_element(By.NAME, "session[username_or_email]")
+password_field = driver.find_element(By.NAME, "session[password]")
+username_field.send_keys(username)
+password_field.send_keys(password)
+password_field.submit()
 
-        # 新しく表示されたツイート要素のみを取得
-        current_tweets = driver.find_elements(By.TAG_NAME, "article")
+# ツイートの要素を取得
+wait.until(EC.presence_of_all_elements_located((By.TAG_NAME, "article")))
+tweets = driver.find_elements(By.TAG_NAME, "article")
 
-        for tweet in current_tweets:
-            try:
-                print("==============================")
-                print(tweet.text + "出ていけ")
-                print("==============================")
+for tweet in tweets:
+    # 最初のツイートまでスクロール
+    actions = ActionChains(driver)
+    actions.move_to_element(tweet)
+    actions.perform()
+    time.sleep(1)
 
-                follow_link = tweet.find_element(
-                    By.XPATH, './/div[@data-testid="User-Name"]//a[@role="link"]'
-                )
+    # ツイート元アカウント名の要素を取得
+    account_name_element = tweet.find_element(By.XPATH, './/div[@data-testid="User-Name"]//a[@role="link"]')
+    follow_username = account_name_element.get_attribute("href").split("/")[-1]
+    current_url = "https://twitter.com/" + follow_username
 
-                with open("tweets.txt", "a", encoding="utf-8") as file:
-                    text = tweet.text.strip()
-                    textf = follow_link.text.strip()
-                    if text:
-                        file.write("**************************\n")
-                        file.write(text + "\n")
-                        file.write("**************************\n")
+    # フォローボタンをクリック
+    driver.get(current_url)
+    wait.until(EC.presence_of_element_located((By.XPATH, '//div[@data-testid="primaryColumn"]//div[@data-testid="placementTracking"]')))
+    follow_button = driver.find_element(By.XPATH, '//div[@data-testid="primaryColumn"]//div[@data-testid="placementTracking"]')
+    follow_button.click()
 
-                        file.write("--------------------------\n")
-                        file.write(textf + "\n")
-                        file.write("--------------------------\n")
-            except Exception as e:
-                print(f"An error occurred: {str(e)}")
-                continue
-
-        # 1000pxスクロールする
-        driver.execute_script("window.scrollBy(0, 2000);")
-        print("スクロールスクロールスクロールスクロール出ていけ")
-        print("スクロールスクロールスクロールスクロール出ていけ")
-        print("スクロールスクロールスクロールスクロール出ていけ")
-
-        time.sleep(1)
-
-finally:
-    driver.quit()
+driver.quit()
