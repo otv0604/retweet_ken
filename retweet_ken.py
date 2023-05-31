@@ -5,7 +5,10 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.common.keys import Keys
 import time
+import secret
+import pickle
 
 # Chromeドライバーのパスを指定してWebDriverを初期化
 service = Service("chromedriver.exe")
@@ -14,15 +17,18 @@ options = Options()
 driver = webdriver.Chrome(service=service, options=options)
 wait = WebDriverWait(driver, 10)
 
+# ユーザー名とパスワード
+username = secret.credentials["LOGIN_ID"]
+password = secret.credentials["PASSWORD"]
+cookies_file = "twi.pkl"
 
-# Twitterのページを開く
-driver.get("https://twitter.com/potitto_tousen/")
-# 通知popup消去
-time.sleep(10)
-driver.find_element(
-    By.XPATH,
-    '//*[@id="layers"]/div[2]/div/div/div/div/div/div[2]/div[2]/div/div[2]/div/div[2]/div[2]/div[2]',
-).click()
+# クッキーを読み込む
+web_url = "https://twitter.com/potitto_tousen/"
+cookies = pickle.load(open(cookies_file, "rb"))  # クッキーを読み込む
+driver.get(web_url)  # まずは一度サイトにアクセス
+for c in cookies:  # クッキーを設定する
+    driver.add_cookie(c)
+driver.get(web_url)  # クッキーを設定した後またアクセス
 
 # ツイートの要素を取得
 WebDriverWait(driver, 10).until(
@@ -30,7 +36,7 @@ WebDriverWait(driver, 10).until(
 )
 tweets = driver.find_elements(By.TAG_NAME, "article")
 
-for i in range(3):
+for i in range(len(tweets)):
     WebDriverWait(driver, 10).until(
         EC.presence_of_all_elements_located((By.TAG_NAME, "article"))
     )
@@ -51,7 +57,28 @@ for i in range(3):
     driver.get(current_url)
 
     # ページ遷移の完了を待つ
+    wait.until(
+        EC.presence_of_all_elements_located(
+            (
+                By.XPATH,
+                '//div[@data-testid="primaryColumn"]//div[@data-testid="placementTracking"]',
+            )
+        )
+    )
+
     time.sleep(3)
+
+    follow_button = driver.find_element(
+        By.XPATH,
+        '//div[@data-testid="primaryColumn"]//div[@data-testid="placementTracking"]',
+    )
+
+    actions.move_to_element(follow_button)
+    actions.perform()
+    follow_button.click()
+
+    time.sleep(1)
+
     driver.back()
     time.sleep(3)
 
