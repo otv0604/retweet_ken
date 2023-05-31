@@ -37,9 +37,6 @@ WebDriverWait(driver, 10).until(
 tweets = driver.find_elements(By.TAG_NAME, "article")
 
 for i in range(len(tweets)):
-    WebDriverWait(driver, 10).until(
-        EC.presence_of_all_elements_located((By.TAG_NAME, "article"))
-    )
     tweets = driver.find_elements(By.TAG_NAME, "article")
 
     # 最初のツイートまでスクロール
@@ -80,6 +77,22 @@ for i in range(len(tweets)):
     time.sleep(1)
 
     driver.back()
-    time.sleep(3)
+
+    # ツイートをリツイートする
+    retweet_button = tweets[i].find_element(By.XPATH, './/div[@data-testid="retweet"]')
+
+    actions.move_to_element(retweet_button)
+    actions.perform()
+    retweet_button.click()
+
+    time.sleep(1)
+
+    confirm_button = tweets[i].find_element(
+        By.XPATH, '//div[@data-testid="retweetConfirm"]'
+    )
+
+    actions.move_to_element(confirm_button)
+    actions.perform()
+    confirm_button.click()
 
 driver.quit()
