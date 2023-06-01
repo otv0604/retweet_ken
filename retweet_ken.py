@@ -36,21 +36,25 @@ WebDriverWait(driver, 10).until(
 )
 tweets = driver.find_elements(By.TAG_NAME, "article")
 
-for i in range(len(tweets)):
+for tweet in tweets:
     tweets = driver.find_elements(By.TAG_NAME, "article")
 
     # 最初のツイートまでスクロール
     actions = ActionChains(driver)
-    actions.move_to_element(tweets[i])
+    actions.move_to_element(tweet)
     actions.perform()
     time.sleep(1)
 
     # ツイート元アカウント名の要素を取得しページ移動
-    account_name_elements = tweets[i].find_element(
+    account_name_elements = tweet.find_element(
         By.XPATH, './/div[@data-testid="User-Name"]//a[@role="link"]'
     )
     follow_username = account_name_elements.get_attribute("href").split("/")[-1]
     current_url = "https://twitter.com/" + follow_username
+
+    # 新しいタブを作成し、フォーカスする
+    driver.switch_to.new_window("tab")
+    driver.switch_to.window(driver.window_handles[1])
     driver.get(current_url)
 
     # ページ遷移の完了を待つ
@@ -74,25 +78,31 @@ for i in range(len(tweets)):
     actions.perform()
     follow_button.click()
 
-    time.sleep(1)
-
-    driver.back()
+    time.sleep(2)
+    driver.close()
+    time.sleep(2)
+    driver.switch_to.window(driver.window_handles[0])
+    time.sleep(2)
 
     # ツイートをリツイートする
-    retweet_button = tweets[i].find_element(By.XPATH, './/div[@data-testid="retweet"]')
+    if "unretweet" not in tweet.get_attribute("data-testid"):
+        retweet_button = tweet.find_element(By.XPATH, './/div[@data-testid="retweet"]')
 
-    actions.move_to_element(retweet_button)
-    actions.perform()
-    retweet_button.click()
+        actions.move_to_element(retweet_button)
+        actions.perform()
+        retweet_button.click()
 
-    time.sleep(1)
+        time.sleep(2)
 
-    confirm_button = tweets[i].find_element(
-        By.XPATH, '//div[@data-testid="retweetConfirm"]'
-    )
+        confirm_button = tweet.find_element(
+            By.XPATH, '//div[@data-testid="retweetConfirm"]'
+        )
 
-    actions.move_to_element(confirm_button)
-    actions.perform()
-    confirm_button.click()
+        actions.move_to_element(confirm_button)
+        actions.perform()
+        confirm_button.click()
+
+    else:
+        continue
 
 driver.quit()
