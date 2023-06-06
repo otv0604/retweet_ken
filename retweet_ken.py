@@ -85,9 +85,8 @@ for tweet in tweets:
     time.sleep(2)
 
     # ツイートをリツイートする
-    if "unretweet" not in tweet.get_attribute("data-testid"):
+    try:
         retweet_button = tweet.find_element(By.XPATH, './/div[@data-testid="retweet"]')
-
         actions.move_to_element(retweet_button)
         actions.perform()
         retweet_button.click()
@@ -97,12 +96,14 @@ for tweet in tweets:
         confirm_button = tweet.find_element(
             By.XPATH, '//div[@data-testid="retweetConfirm"]'
         )
-
         actions.move_to_element(confirm_button)
         actions.perform()
         confirm_button.click()
 
-    else:
+        time.sleep(2)
+
+    except:
+        print("リツイート済み")
         continue
 
 driver.quit()
