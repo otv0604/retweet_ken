@@ -5,15 +5,24 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
-from selenium.webdriver.common.keys import Keys
 import time
 import secret
 import pickle
+import random
+
+
+def get_article():
+    WebDriverWait(driver, 10).until(
+        EC.presence_of_all_elements_located((By.TAG_NAME, "article"))
+    )
+    article = driver.find_elements(By.TAG_NAME, "article")
+    return article
+
 
 # Chromeドライバーのパスを指定してWebDriverを初期化
 service = Service("chromedriver.exe")
 options = Options()
-# options.headless = True # ヘッドレスモードを有効化する場合はコメント解除
+options.headless = False
 driver = webdriver.Chrome(service=service, options=options)
 wait = WebDriverWait(driver, 10)
 
@@ -30,70 +39,58 @@ for c in cookies:  # クッキーを設定する
     driver.add_cookie(c)
 driver.get(web_url)  # クッキーを設定した後またアクセス
 
-# ツイートの要素を取得
-WebDriverWait(driver, 10).until(
-    EC.presence_of_all_elements_located((By.TAG_NAME, "article"))
-)
-# tweets = driver.find_elements(By.TAG_NAME, "article")
+y = 0
+tweets = get_article()
 
-for _ in range(5):
-    tweets = driver.find_elements(By.TAG_NAME, "article")
+for _ in range(30):
+    tweets = get_article()
 
     for tweet in tweets:
-        tweets = driver.find_elements(By.TAG_NAME, "article")
+        try:
+            tweets = get_article()
 
-        # 最初のツイートまでスクロール
-        actions = ActionChains(driver)
-        actions.move_to_element(tweet)
-        actions.perform()
-        time.sleep(1)
+            # 最初のツイートまでスクロール
+            actions = ActionChains(driver)
+            actions.move_to_element(tweet)
+            actions.perform()
 
-        # ツイート元アカウント名の要素を取得しページ移動
-        account_name_elements = tweet.find_element(
-            By.XPATH, './/div[@data-testid="User-Name"]//a[@role="link"]'
-        )
-        print(account_name_elements.text)
-        follow_username = account_name_elements.get_attribute("href").split("/")[-1]
-        current_url = "https://twitter.com/" + follow_username
+            # ツイート元アカウント名の要素を取得しページ移動
+            account_name_elements = tweet.find_element(
+                By.XPATH, './/div[@data-testid="User-Name"]//a[@role="link"]'
+            )
+            print(account_name_elements.text)
+            follow_username = account_name_elements.get_attribute("href").split("/")[-1]
+            current_url = "https://twitter.com/" + follow_username
 
-        # 新しいタブを作成し、フォーカスする
-        driver.switch_to.new_window("tab")
-        # タブのハンドルを取得
-        handles = driver.window_handles
-        driver.switch_to.window(handles[-1])
-        # driver.switch_to.window(driver.window_handles[1])
-        driver.get(current_url)
+            # 新しいタブを作成・フォーカス・ページ移動
+            driver.switch_to.new_window("tab")
+            driver.switch_to.window(driver.window_handles[1])
+            driver.get(current_url)
 
-        # ページ遷移の完了を待つ
-        wait.until(
-            EC.presence_of_all_elements_located(
-                (
-                    By.XPATH,
-                    '//div[@data-testid="primaryColumn"]//div[@data-testid="placementTracking"]',
+            # フォロー実行
+            wait.until(
+                EC.presence_of_all_elements_located(
+                    (
+                        By.XPATH,
+                        '//div[@data-testid="primaryColumn"]//div[@data-testid="placementTracking"]',
+                    )
                 )
             )
-        )
+            follow_button = driver.find_element(
+                By.XPATH,
+                '//div[@data-testid="primaryColumn"]//div[@data-testid="placementTracking"]',
+            )
+            actions.move_to_element(follow_button)
+            actions.perform()
+            follow_button.click()
 
-        time.sleep(1)
+            time.sleep(random.uniform(0.5, 2.0))
 
-        follow_button = driver.find_element(
-            By.XPATH,
-            '//div[@data-testid="primaryColumn"]//div[@data-testid="placementTracking"]',
-        )
+            # タブを閉じる
+            driver.close()
+            driver.switch_to.window(driver.window_handles[0])
 
-        actions.move_to_element(follow_button)
-        actions.perform()
-        follow_button.click()
-
-        time.sleep(1)
-        driver.close()
-        time.sleep(1)
-        driver.switch_to.window(handles[0])
-        # driver.switch_to.window(driver.window_handles[0])
-        time.sleep(1)
-
-        # ツイートをリツイートする
-        try:
+            # リツイートボタンを押す
             retweet_button = tweet.find_element(
                 By.XPATH, './/div[@data-testid="retweet"]'
             )
@@ -101,30 +98,24 @@ for _ in range(5):
             actions.perform()
             retweet_button.click()
 
-            time.sleep(1)
-
+            # リツイート確認ボタンを押す
             confirm_button = tweet.find_element(
                 By.XPATH, '//div[@data-testid="retweetConfirm"]'
             )
             actions.move_to_element(confirm_button)
             actions.perform()
             confirm_button.click()
+            print("リツイート実行")
 
-            time.sleep(1)
+            time.sleep(random.uniform(0.5, 2.0))
 
         except:
             print("リツイート済み")
             continue
 
+    # スクロール
     print("-------------ループ終わり-------------")
-    y = 0
     y += 5000
     driver.execute_script(f"window.scrollTo(0,{y})")
-    time.sleep(2)
-
-    new_tweets = driver.find_elements(By.TAG_NAME, "article")
-    time.sleep(2)
-    if new_tweets == tweets:
-        break
 
 driver.quit()
